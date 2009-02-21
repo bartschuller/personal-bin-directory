@@ -1,0 +1,29 @@
+#!/bin/sh -e
+
+USAGE='<branchname> <start-point>'
+LONG_USAGE='git-retrobranch lets you create a branch after you have
+already done some commits destined for the new branch. In other words,
+it renames the current branch to <branchname> and starts a new branch
+at <start-point> with the name of your old branch.
+
+Example:     git-retrobranch topic master~2
+
+  A---B---C---D master   -->   A---B master
+                                    \
+                                     C---D topic
+'
+SUBDIRECTORY_OK=Yes
+OPTIONS_SPEC=
+. git-sh-setup
+
+curbranch=`git branch --no-color 2>/dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/'`
+newbranch=$1
+startpoint=$2
+echo "making new branch $newbranch and setting $curbranch back to $startpoint"
+
+git checkout -b $newbranch $startpoint
+test "(no branch)" == "$curbranch" && exit
+git merge $curbranch
+git checkout $curbranch
+git reset --soft $startpoint
+git checkout $newbranch
