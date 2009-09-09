@@ -11,16 +11,26 @@ my $port;
 my $isdep;
 
 while (<$fh>) {
-	print;
-	if (/^(.*?) has (.*?) dependencies/) {
+
+#Full Name: git-core @1.6.4.2+doc+gitweb+svn
+#Runtime Dependencies: rsync, perl5, p5-error, subversion, p5-libwww-perl, p5-svn-simple, p5-term-readkey
+#Library Dependencies: curl, zlib, openssl, expat, libiconv
+#--
+#Full Name: libiconv @1.13
+#Build Dependencies:   gperf
+
+	if (/^Full Name: (.*?) /) {
 		$port = $1;
-		$isdep = $2 =~ /library|build/ ? 1 : 0;
 		$ports{$port} = {};
-	} elsif (/^\s+(.*?)$/) {
-		my $dep = $1;
-		$ports{$port}{$dep} = 1;
+	} elsif (/^(Runtime|Library|Build) Dependencies: (.*?)$/) {
+		my $deps = $2;
+		foreach my $dep (split /, /, $deps) {
+			$ports{$port}{$dep} = 1;
+		}
 	}
 }
+
+dump_ports();
 
 my $changed = 1;
 my $level = 2;
@@ -38,6 +48,7 @@ while ($changed) {
 		}
 	}
 	$level++;
+	dump_ports();
 }
 
 my @ports = sort {
@@ -56,3 +67,14 @@ my @ports = sort {
 } keys %ports;
 
 print "@ports\n";
+
+sub dump_ports {
+	return;
+	print "\n";
+	foreach my $p (keys %ports) {
+		print "$p\n";
+		foreach (keys %{$ports{$p}}) {
+			print "\t$_\t$ports{$p}{$_}\n";
+		}
+	}
+}
